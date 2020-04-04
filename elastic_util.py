@@ -1,0 +1,177 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+import logging
+logging.basicConfig(level=logging.INFO)
+
+from elasticsearch import Elasticsearch
+from elasticsearch.client import IndicesClient
+from elasticsearch.exceptions import NotFoundError
+
+# es = Elasticsearch()
+
+INDEX_NAMES = ['contents', 'users']
+
+class ElasticUtil(object):
+    def __init__(self, index, host='localhost', port=9200, doc_type='_doc'):
+        self._client = Elasticsearch(host=host, port=port)
+        self._doc_type = doc_type
+        self._index = index
+
+        self._index_client = IndicesClient(self._client) 
+        if self._index_client.exists(index=self._index):
+            logging.warning('index name:'+self._index+' exists')
+        else:
+            logging.info('create index name:'+self._index)
+            self._index_client.create(index=self._index)
+
+    def get(self, id):
+        exists = self._client.exists(index=self._index, id=id)
+        if exists:
+            res = self._client.get(index=self._index, id=id)
+            return res, 200
+        else:
+            logging.error(id+' not found')
+            return False, 404
+
+    def get_all(self):
+        search_query = {
+            "query": {
+                "match_all": {}
+            }
+        }
+        res = self._client.search(index=self._index, body=search_query)
+        return res['hits']['hits'], 200
+
+    def post(self, body={}):
+        if type(body)!=dict:
+            msg = 'Body must be dictionary'
+            logging.error(msg)
+            return msg, 400
+
+        res_dict = body
+        res = self._client.index(index=self._index, body=body, doc_type=self._doc_type)
+        logging.info('id: '+res['_id']+' was created')
+        return res, 201
+
+    def put(self, id, body={}): 
+        if type(body)!=dict:
+            msg = 'Body must be dictionary'
+            logging.error(msg)
+            return msg, 400
+
+        exist = self._client.exists(index=self._index, id=id)
+        res = self._client.index(id=id, index=self._index, body=body, doc_type=self._doc_type)
+        if exist:
+            logging.info(id+' was updated')            
+        else:
+            logging.info(id+' was created')            
+
+        return res, 200
+
+class ElasticUtilNameId(ElasticUtil):
+    def __init__(self, index, host='localhost', port=9200, doc_type='_doc'):
+        super().__init__(index, host, port, doc_type)
+
+    def name_check(self, name):
+        if name is '':
+            msg = 'Empty name is not allowed'
+            logging.error(msg)
+            return msg, 400
+        else:
+            return '', 200
+
+    def get(self, name):
+        search_query = {
+          "query": {
+            "term": {
+              "name.keyword": name
+            }
+          }
+        }
+        res = self._client.search(index=self._index, body=search_query)['hits']['hits']
+        if len(res)>1:
+            msg = 'There are multiple contents with same name: ' + name + '. Please fix the data'
+            logging.error(msg)
+            return msg, 500
+        elif len(res)==0:
+            msg = name+' not found'
+            logging.error(msg)
+            return msg, 404
+        else:
+            return res[0], 200
+
+    def get_list(self, names):
+        res = []
+        for name in names:
+            res.append(self.get(name))[0]
+        return res, 200
+
+    def get_all(self):
+        search_query = {
+            "query": {
+                "match_all": {}
+            }
+        }
+        res = self._client.search(index=self._index, body=search_query)
+        return res['hits']['hits'], 200
+
+    def post(self, name, body={}):
+        res, code = self.name_check(name)
+        if code==400:
+            return msg, code
+        res, code = self.get(name)
+        if code==200:
+            msg = name+' is exist'
+            logging.warn(msg)
+            return msg, 400
+        if type(body)!=dict:
+            msg = 'Body must be dictionary'
+            logging.error(msg)
+            return msg, 400
+
+        res_dict = body
+        res_dict['name'] = name
+        res = self._client.index(index=self._index, body=res_dict, doc_type=self._doc_type)
+        logging.info(name+' was created')
+        return res, 201
+
+    def put(self, name, body={}):
+        msg, code = self.name_check(name)
+        if code==400:
+            return msg, code
+        if type(body)!=dict:
+            msg = 'Body must be dictionary'
+            logging.error(msg)
+            return msg, 400
+
+        res = self.get(name)
+        res_dict = body
+        res_dict['name'] = name
+
+        res, code = self.get(name)
+        if code==200:
+            doc_id = res['_id']
+            res = self._client.index(id=doc_id, index=self._index, body=res_dict, doc_type=self._doc_type)
+            logging.info(name+' was updated')
+            return res, 200
+        elif code==404:
+            res = self._client.index(index=self._index, body=res_dict, doc_type=self._doc_type)
+            logging.info(name+' was created')            
+            return res, 201
+        elif code==500:
+            return res, code
+
+
+
+if __name__ == "__main__":
+    # Initial setup for elasticsearch
+    eu_user = ElasticUtil(index=INDEX_NAMES[1])
+    eu_contents = ElasticUtilNameId(index=INDEX_NAMES[0])
+    # print(eu.post('test'))
+    # print(eu.put('test'))
+    # print(eu.put('test2'))
+    # print(eu.get('2'))
+    # print(eu.get('test'))
+
+    # print(eu.get_all())
