@@ -20,7 +20,7 @@ def pre_create_graph(points, data):
         }
     return res
 
-def create_graph(input):
+def create_graph(input, merge=True):
     G = nx.Graph()
     for name in input:
         point = input[name]['point']
@@ -42,6 +42,8 @@ def create_graph(input):
                             G.nodes[attr]['point'] += point
                         G.add_edge(name, attr, relation=k) 
                         attrs.add(attr)
+    if merge:
+        G = merge_genre(G)
 
     return G
 

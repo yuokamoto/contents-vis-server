@@ -174,12 +174,13 @@ class GraphFromId(Resource):
         points = {}
         data = {}
         for name in input_data.keys() :
-            points[name] = float(input_data[name])
-            res, code = eu_content.get(name)
-            if code==200:
-                data[name] = res['_source']
-            else:
-                print(res, code)
+            if 'checked' in input_data[name].keys() and 'checked':
+                points[name] = float(input_data[name])
+                res, code = eu_content.get(name)
+                if code==200:
+                    data[name] = res['_source']
+                else:
+                    print(res, code)
 
         G = create_graph(pre_create_graph(points=points, data=data)) 
         res = {'id': id, 'data':input_data, 'graph':{}}
@@ -201,17 +202,18 @@ class GraphFromData(Resource):
         points = {}
         data = {}
         for name in input_data.keys() :
-            points[name] = float(input_data[name])
-            res, code = eu_content.get(name)
-            if code==200:
-                data[name] = res['_source']
-            else:
-                print(res, code)
+            if 'checked' in input_data[name].keys() and input_data[name]['checked']:
+                points[name] = float(input_data[name]['point'])
+                res, code = eu_content.get(name)
+                if code==200:
+                    data[name] = res['_source']
+                else:
+                    print(res, code)
 
         G = create_graph(pre_create_graph(points=points, data=data)) 
         res = {'id': id, 'data':input_data, 'graph':{}}
         res['graph']['nodes'] = dict(G.nodes)
-        res['graph']['edges'] = G.edges.__str__()
+        res['graph']['edges'] = list(G.edges)
 
         return res, 200
 

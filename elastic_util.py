@@ -50,7 +50,31 @@ class ElasticUtil(object):
             return msg, 400
 
         res_dict = body
-        res = self._client.index(index=self._index, body=body, doc_type=self._doc_type)
+        # res_dict = body = {"ウンナンさん": {"point": 0.2, "checked": 1.0, "id": -1.0},
+        #                      "ウンナンの気分は上々。": {"point": 0.2, "checked": 1.0, "id": -1.0},
+        #                      "UN街": {"point": 0.2, "checked": 1.0, "id": -1.0},
+        #                      "勇者ヨシヒコと魔王の城": {"point": 0.25, "checked": 1.0, "id": -1.0},
+        #                      "勇者ヨシヒコと悪霊の鍵": {"point": 0.25, "checked": 1.0, "id": -1.0},
+        #                      "勇者ヨシヒコと導かれし七人": {"point": 0.25, "checked": 1.0, "id": -1.0},
+        #                      "ネリさまぁ〜ず": {"point": 0.25, "checked": 1.0, "id": -1.0},
+        #                      "神さまぁ〜ず": {"point": 0.25, "checked": 1.0, "id": -1.0},
+        #                      "ホリさまぁ〜ず": {"point": 0.25, "checked": 1.0, "id": -1.0},
+        #                      "マルさまぁ〜ず": {"point": 0.25, "checked": 1.0, "id": -1.0},
+        #                      "バナナ塾": {"point": 0.25, "checked": 1.0, "id": -1.0},
+        #                      "バナナマンのブログ刑事": {"point": 0.25, "checked": 1.0, "id": -1.0},
+        #                      "オトナ養成所_バナナスクール": {"point": 0.25, "checked": 1.0, "id": -1.0},
+        #                      "ツギクルもん": {"point": 0.25, "checked": 1.0, "id": -1.0},
+        #                      "うつけもん": {"point": 0.25, "checked": 1.0, "id": -1.0},
+        #                      "オサレもん": {"point": 0.25, "checked": 1.0, "id": -1.0},
+        #                      "30minutes": {"point": 0.33, "checked": 1.0, "id": -1.0},
+        #                      "30minutes鬼": {"point": 0.33, "checked": 1.0, "id": -1.0},
+        #                      "デリパンダ〜おしゃべりデリ坊、東京ド真ん中配達中〜": {"point": 0.33, "checked": 1.0, "id": -1.0},
+        #                      "あらびき団": {"point": 0.5, "checked": 1.0, "id": -1.0},
+        #                      "タイプライターズ": {"point": 0.5, "checked": 1.0, "id": -1.0},
+        #                      "飛び出せ!科学くん": {"point": 0.5, "checked": 1.0, "id": -1.0},
+        #                      "ラブレターズのオールナイトニッポン0(ZERO)": {"point": 0.6, "checked": 1.0, "id": -1.0}
+        #                      }
+        res = self._client.index(index=self._index, body=res_dict, doc_type=self._doc_type)
         logging.info('id: '+res['_id']+' was created')
         return res, 201
 
