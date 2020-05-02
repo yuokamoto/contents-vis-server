@@ -7,17 +7,13 @@ verify_ssl = true
 
 [packages]
 flask = "*"
-marshmallow = "*"
-flask-swagger = "*"
-flask-restful = "*"
+elasticsearch = "*"
 flask-restx = "*"
 flask-cors = "*"
-elasticsearch = "*"
-logging = "*"
-werkzeug = "*"
 wikipedia = "*"
 numpy = "*"
 networkx = "*"
+ipykernel = "*"
 
 [requires]
 python_version = "3.6"

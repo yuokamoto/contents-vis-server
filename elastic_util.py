@@ -13,7 +13,7 @@ from elasticsearch.exceptions import NotFoundError
 INDEX_NAMES = ['contents', 'users']
 
 class ElasticUtil(object):
-    def __init__(self, index, host='localhost', port=9200, doc_type='_doc'):
+    def __init__(self, index, host='localhost', port=9200, doc_type='_doc', field_limit=5000):
         self._client = Elasticsearch(host=host, port=port)
         self._doc_type = doc_type
         self._index = index
@@ -23,6 +23,11 @@ class ElasticUtil(object):
             logging.warning('index name:'+self._index+' exists')
         else:
             logging.info('create index name:'+self._index)
+            body = {
+                "settings": {
+                    "index.mapping.total_fields.limit": field_limit
+                },
+            }
             self._index_client.create(index=self._index)
 
     def get(self, id):

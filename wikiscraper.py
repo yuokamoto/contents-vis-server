@@ -1,11 +1,8 @@
-import wikipedia
-wikipedia.set_lang('ja')
-
 import re
 import numpy as np
-import wikipedia
 import bs4.element as bs4elem
 from bs4 import BeautifulSoup
+import requests
 
 # todo handle English+漢字, '-.,' in the name
 EXCEPTION = ['A・T・C事務所','Scope co.,ltd.', '4-Legs',  'オア・グローリー神宮前店', 'インダストリアル・ライト&マジック']
@@ -68,13 +65,18 @@ class WikiScraper(object):
     # lang: wikipedia language
     # pageid : id of wikipage.
     def load_wiki(self, name, lang='ja', pageid=np.nan):
-        wikipedia.set_lang(lang)
+        # wikipedia.set_lang(lang)
         try:
-            if np.isnan(pageid):
-                self._page = wikipedia.page(name)
-            else:
-                self._page = wikipedia.page(pageid=int(pageid))
-            self.load_html(name, self._page.html())
+            url = 'https://ja.wikipedia.org/wiki/'+name
+            print(url)
+            r = requests.get(url)
+            self._page = r.text
+            # if np.isnan(pageid):
+            #     self._page = wikipedia.page(name).html()
+            #     print(self._page, type(self._page))
+            # else:
+            #     self._page = wikipedia.page(pageid=int(pageid)).html()
+            self.load_html(name, self._page)
         except:
             print('Can not open wikipage of '+name+' with lang '+lang)    
     
@@ -117,6 +119,7 @@ class WikiScraper(object):
             key = key.strip()
             if key in self._result:
                 self._result[key].extend(value)
+                self._result[key] = list(set(self._result[key]))
             else:
                  self._result[key] = value
 

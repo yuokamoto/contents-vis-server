@@ -27,7 +27,7 @@ user = api.model('User', {
 content = api.model('Content', {
     'name': fields.String(attribute='_source.name', description='The name of content'),
     'wiki_id': fields.Integer(required=False, default=-1, example=-1, description='The wikipedia page id'),
-    'data': fields.Raw(attribute='_source', readonly=True, required=True, description='data')
+    'data': fields.Raw(attribute='_source', default={}, required=True, description='data')
 })
 
 # need to be restful?
@@ -77,8 +77,13 @@ class User(Resource):
 
 
 
-def wiki_id_check(wiki_id):
-    return  np.nan if wiki_id <0 else wiki_id
+def wiki_id_check(payload):
+    if 'wiki_id' not in payload.keys():
+        return np.nan 
+    elif payload['wiki_id'] <0:
+        return np.nan
+    else:
+        return palyload['wiki_id']
 
 def wiki_load(name, wiki_id):
     wsc = WikiScraper()
@@ -114,12 +119,16 @@ class ContentList(Resource):
         if code != 404:
             return name + ' is exist', 400
 
-        #get data from wiki        
-        res, code = wiki_load(name, wiki_id_check(api.payload['wiki_id']))
-        if code==404:
-            return res, code
+        #get data from wiki   
+        if api.payload['data']=={} :     
+            res, code = wiki_load(name, wiki_id_check(api.payload))
+            if code==404:
+                return res, code
 
-        wiki_data = res
+            wiki_data = res
+        else:
+            wiki_data = api.payload['data']
+
         #post data to the elastic search
         res, code = eu_content.post(name, wiki_data)
         if code==201:
@@ -142,15 +151,21 @@ class Content(Resource):
     def put(self, name):
         '''Update a task given its identifier'''
 
-        #get data from wiki        
-        res, code = wiki_load(name, wiki_id_check(api.payload['wiki_id']))
-        if code==404:
-            return res, code
+        #get data from wiki
+        print(api.payload)
+        if api.payload['data']=={} :
+            res, code = wiki_load(name, wiki_id_check(api.payload))
+            if code==404:
+                return res, code
 
-        wiki_data = res
+            wiki_data = res
+        else:
+            wiki_data = api.payload['data']
+
+        # print(wiki_data)
         #post data to the elastic search
         res, code = eu_content.put(name, wiki_data)
-        if code==200:
+        if code==200 or code==201:
             return wiki_data, code
 
         return res, code
@@ -203,12 +218,13 @@ class GraphFromData(Resource):
         data = {}
         for name in input_data.keys() :
             if 'checked' in input_data[name].keys() and input_data[name]['checked']:
-                points[name] = float(input_data[name]['point'])
                 res, code = eu_content.get(name)
                 if code==200:
+                    points[name] = float(input_data[name]['point'])
                     data[name] = res['_source']
                 else:
                     print(res, code)
+        # print(points, data)
 
         G = create_graph(pre_create_graph(points=points, data=data)) 
         res = {'id': id, 'data':input_data, 'graph':{}}
