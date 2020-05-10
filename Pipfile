@@ -13,7 +13,6 @@ flask-cors = "*"
 wikipedia = "*"
 numpy = "*"
 networkx = "*"
-ipykernel = "*"
 
 [requires]
 python_version = "3.7"

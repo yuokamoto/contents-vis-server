@@ -8,7 +8,7 @@ from wikiscraper import WikiScraper
 from graph import pre_create_graph, create_graph
 
 app = Flask(__name__)
-CORS(app, resources={r'/*': {'origins': 'http://localhost:3000'}})
+CORS(app, resources={r'/*': {'origins': ['http://localhost:3000', 'http://localhost']}})
 
 # app.wsgi_app = ProxyFix(app.wsgi_app)
 api = Api(app, version='0.0', title='Contents Network API',
@@ -37,8 +37,15 @@ graph = api.model('Graph', {
     'graph': fields.Raw(readonly=True, description='nodes and edges')
 })
 
-eu_user = ElasticUtil(index='users')
-eu_content = ElasticUtilNameId(index='contents')
+try:
+    eu_user = ElasticUtil(index='users')
+    eu_content = ElasticUtilNameId(index='contents')
+except Exception as e:
+    print(e)
+    print('Can\'t connect to the elasticsearch')
+    eu_user = None
+    eu_content = None
+
 
 @ns_users.route('/')
 class UserList(Resource):
