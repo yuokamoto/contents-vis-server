@@ -8,7 +8,8 @@ from wikiscraper import WikiScraper
 from graph import pre_create_graph, create_graph
 
 app = Flask(__name__)
-CORS(app, resources={r'/*': {'origins': ['http://localhost:3000', 'http://localhost']}})
+# CORS(app, resources={r'/*': {'origins': ['http://localhost:3000', 'http://localhost']}})
+CORS(app)
 
 # app.wsgi_app = ProxyFix(app.wsgi_app)
 api = Api(app, version='0.0', title='Contents Network API',
