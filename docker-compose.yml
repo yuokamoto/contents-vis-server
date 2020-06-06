@@ -5,8 +5,8 @@ services:
     image: contents-vis-server
     build: .
     extra_hosts:
-      - "localhost:192.168.11.101"
+      - "localhost:192.168.11.11" #should be locap ip for elasticsearch
     ports:
       - "5000:5000"
-    # environment:
-    #   API_HOST: "192.168.11.101" 
+    env_file:
+      - local.env

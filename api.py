@@ -1,3 +1,4 @@
+import os
 from flask import Flask
 from flask_restx import Api, Resource, fields, cors
 # from werkzeug.contrib.fixers import ProxyFix
@@ -19,6 +20,7 @@ api = Api(app, version='0.0', title='Contents Network API',
 
 ns_users = api.namespace('users', description='users data')
 ns_contents = api.namespace('contents', description='contents data')
+ns_wiki = api.namespace('wiki', description='get data from wikipedia')
 ns_graphs = api.namespace('graph', description='contents graph')
 
 user = api.model('User', {
@@ -32,6 +34,10 @@ content = api.model('Content', {
 })
 
 # need to be restful?
+wiki = api.model('Wiki', {
+    'name': fields.String(attribute='_source.name', description='The name of content'),
+    'wiki_id': fields.Integer(required=False, default=-1, example=-1, description='The wikipedia page id'),
+})
 graph = api.model('Graph', {
     'id': fields.String(readonly=True, description='The name of user'),
     'data': fields.Raw(required=True, description='Dict of contents and score'),
@@ -39,13 +45,18 @@ graph = api.model('Graph', {
 })
 
 try:
-    eu_user = ElasticUtil(index='users')
-    eu_content = ElasticUtilNameId(index='contents')
+    host = os.environ.get('ELASTIC_HOST', 'localhost')
+    port = os.environ.get('ELASTIC_PORT', 9200)
+    scheme = os.environ.get('ELASTIC_SCHEME', 'http')
+    http_auth = (os.environ.get('ELASTIC_USER', ''), os.environ.get('ELASTIC_PASS', ''))
+    eu_user = ElasticUtil(index='users', host=host, port=port, http_auth=http_auth, scheme=scheme)
+    eu_content = ElasticUtilNameId(index='contents2',  host=host, port=port, http_auth=http_auth, scheme=scheme)
 except Exception as e:
     print(e)
     print('Can\'t connect to the elasticsearch')
     eu_user = None
     eu_content = None
+    exit()
 
 
 @ns_users.route('/')
@@ -83,8 +94,6 @@ class User(Resource):
         res = eu_user.put(id, api.payload['data'])
         return res
 
-
-
 def wiki_id_check(payload):
     if 'wiki_id' not in payload.keys():
         return np.nan 
@@ -104,6 +113,16 @@ def wiki_load(name, wiki_id):
             msg += '.'
         return msg, 404
     return wiki_data, 200
+
+@ns_wiki.route('/')
+class Wiki(Resource):
+    '''get parsed data form wiki'''
+    @ns_contents.doc('Get parsed Wiki')
+    @ns_contents.expect(wiki)
+    def post(self):
+        '''Retrun parsed wiki data'''
+        print(wiki_load(api.payload['name'], wiki_id_check(api.payload)))
+        return wiki_load(api.payload['name'], wiki_id_check(api.payload))
 
 @ns_contents.route('/')
 class ContentList(Resource):

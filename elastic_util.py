@@ -13,8 +13,8 @@ from elasticsearch.exceptions import NotFoundError
 INDEX_NAMES = ['contents', 'users']
 
 class ElasticUtil(object):
-    def __init__(self, index, host='localhost', port=9200, doc_type='_doc', field_limit=5000):
-        self._client = Elasticsearch(host=host, port=port)
+    def __init__(self, index, host='localhost', port=9200, scheme='https', http_auth=('elastic', ''), doc_type='_doc', field_limit=5000):
+        self._client = Elasticsearch(host=host, port=port, scheme=scheme, http_auth=http_auth)
         self._doc_type = doc_type
         self._index = index
 
@@ -99,8 +99,8 @@ class ElasticUtil(object):
         return res, 200
 
 class ElasticUtilNameId(ElasticUtil):
-    def __init__(self, index, host='localhost', port=9200, doc_type='_doc'):
-        super().__init__(index, host, port, doc_type)
+    def __init__(self, index, host='localhost', port=9200, scheme='https', http_auth=('elastic', ''), doc_type='_doc', field_limit=5000):
+        super().__init__(index, host=host, port=port, scheme=scheme, http_auth=http_auth, doc_type=doc_type, field_limit=field_limit)
 
     def name_check(self, name):
         if name is '':
