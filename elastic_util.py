@@ -6,7 +6,7 @@ logging.basicConfig(level=logging.INFO)
 
 from elasticsearch import Elasticsearch
 from elasticsearch.client import IndicesClient
-from elasticsearch.exceptions import NotFoundError
+from elasticsearch.exceptions import NotFoundError, RequestError
 
 # es = Elasticsearch()
 
@@ -120,6 +120,9 @@ class ElasticUtilNameId(ElasticUtil):
         }
         res = self._client.search(index=self._index, body=search_query)['hits']['hits']
         if len(res)>1:
+            # for data in res:
+            #     print(data['_id'])
+            #     res = self._client.delete(id=data['_id'], index=self._index, doc_type=self._doc_type)
             msg = 'There are multiple contents with same name: ' + name + '. Please fix the data'
             logging.error(msg)
             return msg, 500
@@ -179,17 +182,24 @@ class ElasticUtilNameId(ElasticUtil):
         res_dict['name'] = name
 
         res, code = self.get(name)
-        if code==200:
-            doc_id = res['_id']
-            res = self._client.index(id=doc_id, index=self._index, body=res_dict, doc_type=self._doc_type)
-            logging.info(name+' was updated')
-            return res, 200
-        elif code==404:
-            res = self._client.index(index=self._index, body=res_dict, doc_type=self._doc_type)
-            logging.info(name+' was created')            
-            return res, 201
-        elif code==500:
-            return res, code
+        try:
+            print(body, res, code)
+            if code==200:
+                doc_id = res['_id']
+                # res = self._client.delete(id=doc_id, index=self._index, doc_type=self._doc_type, reflesh=True)
+                res = self._client.index(id=doc_id, index=self._index, body=res_dict, doc_type=self._doc_type)
+                logging.info(name+' was updated')
+                return res, 200
+            elif code==404:
+                res = self._client.index(index=self._index, body=res_dict, doc_type=self._doc_type)
+                logging.info(name+' was created')            
+                return res, 201
+            elif code==500:
+                return res, code
+        except RequestError as err:
+            logging.error(err)
+            return 'Elasticsearch RequestError', 500
+
 
 
 

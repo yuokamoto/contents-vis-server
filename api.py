@@ -9,6 +9,7 @@ from wikiscraper import WikiScraper
 from graph import pre_create_graph, create_graph
 
 app = Flask(__name__)
+app.config.PREFERRED_URL_SCHEME = 'https'
 # CORS(app, resources={r'/*': {'origins': ['http://localhost:3000', 'http://localhost']}})
 CORS(app)
 
@@ -50,7 +51,7 @@ try:
     scheme = os.environ.get('ELASTIC_SCHEME', 'http')
     http_auth = (os.environ.get('ELASTIC_USER', ''), os.environ.get('ELASTIC_PASS', ''))
     eu_user = ElasticUtil(index='users', host=host, port=port, http_auth=http_auth, scheme=scheme)
-    eu_content = ElasticUtilNameId(index='contents2',  host=host, port=port, http_auth=http_auth, scheme=scheme)
+    eu_content = ElasticUtilNameId(index='contents',  host=host, port=port, http_auth=http_auth, scheme=scheme)
 except Exception as e:
     print(e)
     print('Can\'t connect to the elasticsearch')
@@ -286,4 +287,4 @@ class GraphFromData(Resource):
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, ssl_context='adhoc')
